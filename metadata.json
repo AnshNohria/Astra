@@ -1,0 +1,27 @@
+{
+  "financial_records_2023.csv": {
+    "access_count": 75,
+    "created_timestamp": "2025-11-08T17:02:25.963576",
+    "last_accessed_timestamp": "2025-11-08T17:02:25.963589"
+  },
+  "monthly_report_october.pdf": {
+    "access_count": 0,
+    "created_timestamp": "2025-11-08T17:02:26.270288",
+    "last_accessed_timestamp": "2025-11-08T17:02:26.270299"
+  },
+  "backup_database_Q2.zip": {
+    "access_count": 0,
+    "created_timestamp": "2025-11-08T17:02:26.574995",
+    "last_accessed_timestamp": "2025-06-11T17:02:30.554694"
+  },
+  "archived_logs_2022.log": {
+    "access_count": 0,
+    "created_timestamp": "2025-11-08T17:02:26.881579",
+    "last_accessed_timestamp": "2025-04-02T17:02:30.554940"
+  },
+  "customer_transactions.csv": {
+    "access_count": 42,
+    "created_timestamp": "2025-11-08T17:02:27.188091",
+    "last_accessed_timestamp": "2025-11-08T17:02:27.188098"
+  }
+}

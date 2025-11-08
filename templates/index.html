@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra - Intelligent Cloud Storage Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --aws-color: #FF9900;
+            --gcp-color: #4285F4;
+            --azure-color: #0089D6;
+            --bg-dark: #0a0e27;
+            --bg-card: #1a1f3a;
+            --text-primary: #ffffff;
+            --text-secondary: #8b92b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --border: #2d3353;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, var(--aws-color) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, var(--gcp-color) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, var(--azure-color) 0%, transparent 50%);
+            animation: bgMove 20s ease-in-out infinite;
+        }
+
+        @keyframes bgMove {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(-5%, -5%); }
+            66% { transform: translate(5%, 5%); }
+        }
+
+        /* Header */
+        .header {
+            background: rgba(26, 31, 58, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--aws-color), var(--gcp-color), var(--azure-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gcp-color), var(--azure-color));
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        /* Cloud Containers */
+        .clouds-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .cloud-container {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+            min-height: 400px;
+        }
+
+        .cloud-container:hover {
+            border-color: var(--gcp-color);
+            box-shadow: 0 20px 40px rgba(66, 133, 244, 0.2);
+        }
+
+        .cloud-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cloud-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .cloud-aws .cloud-icon {
+            background: linear-gradient(135deg, var(--aws-color), #FF6600);
+        }
+
+        .cloud-gcp .cloud-icon {
+            background: linear-gradient(135deg, var(--gcp-color), #34A853);
+        }
+
+        .cloud-azure .cloud-icon {
+            background: linear-gradient(135deg, var(--azure-color), #00BCF2);
+        }
+
+        .cloud-info h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .cloud-info p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* File Items */
+        .files-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            min-height: 200px;
+        }
+
+        .file-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: grab;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+            border-color: var(--gcp-color);
+        }
+
+        .file-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+            transform: rotate(5deg) scale(0.95);
+        }
+
+        .file-item.migrating {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.98); }
+        }
+
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .file-tier {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tier-hot {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .tier-warm {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .tier-cold {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .tier-archive {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+        }
+
+        .file-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Migration Animation */
+        .migration-path {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .migration-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--gcp-color);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--gcp-color);
+            animation: particleMove 2s ease-in-out;
+        }
+
+        @keyframes particleMove {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            min-width: 300px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-success { border-left: 4px solid var(--success); }
+        .toast-error { border-left: 4px solid var(--error); }
+        .toast-info { border-left: 4px solid var(--gcp-color); }
+
+        .toast-icon {
+            font-size: 1.5rem;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .toast-message {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Cost Dashboard */
+        .cost-dashboard {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .cost-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .cost-total {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--success), #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cost-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .cost-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .cost-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .cost-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .cost-amount {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .cost-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Drag Over Effect */
+        .cloud-container.drag-over {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid var(--border);
+            animation: modalSlideUp 0.3s ease-out;
+        }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gcp-color), var(--success));
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .clouds-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .control-panel {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">⚡ ASTRA</div>
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="totalFiles">0</div>
+                <div class="stat-label">Total Files</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalSize">0 GB</div>
+                <div class="stat-label">Storage Used</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="cloudsActive">0</div>
+                <div class="stat-label">Clouds Active</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <button class="btn btn-primary" onclick="initSystem()">
+                <span>🚀</span> Initialize System
+            </button>
+            <button class="btn btn-success" onclick="ingestSampleFiles()">
+                <span>📦</span> Ingest Sample Files
+            </button>
+            <button class="btn btn-warning" onclick="runTiering()">
+                <span>🎯</span> Run Intelligent Tiering
+            </button>
+            <button class="btn btn-primary" onclick="refreshAll()">
+                <span>🔄</span> Refresh All
+            </button>
+        </div>
+
+        <!-- Cost Dashboard -->
+        <div class="cost-dashboard">
+            <div class="cost-header">
+                <div>
+                    <h2>💰 Cost Analysis</h2>
+                    <div class="cost-total" id="totalCost">$0.00</div>
+                    <p style="color: var(--text-secondary);">per month</p>
+                </div>
+            </div>
+            <div class="cost-breakdown" id="costBreakdown">
+                <!-- Cost cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Cloud Containers -->
+        <div class="clouds-grid" id="cloudsGrid">
+            <!-- Cloud containers will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Migration Modal -->
+    <div class="modal" id="migrationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Migration in Progress</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="migrationContent">
+                <p>Migrating file with integrity verification...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="migrationProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let draggedFile = null;
+        let sourceCloud = null;
+
+        // Initialize system
+        async function initSystem() {
+            showToast('info', 'Initializing', 'Setting up cloud managers...');
+            
+            try {
+                const response = await fetch('/api/init', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast('success', 'Success', data.message);
+                    await refreshAll();
+                } else {
+                    showToast('error', 'Error', data.message);
+                }
+            } catch (error) {
+                showToast('error', 'Error', error.message);
+            }
+        }
+
+        // Ingest sample files
+        async function ingestSampleFiles() {
+            showToast('info', 'Ingesting', 'Uploading sample files to AWS...');
+            
+            try {
+                const response = await fetch('/api/ingest-sample', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast('success', 'Success', data.message);
+                    await refreshAll();
+                } else {
+                    showToast('error', 'Error', data.message);
+                }
+            } catch (error) {
+                showToast('error', 'Error', error.message);
+            }
+        }
+
+        // Run tiering
+        async function runTiering() {
+            showToast('info', 'Analyzing', 'Running intelligent tiering analysis...');
+            
+            try {
+                const response = await fetch('/api/tier', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({cloud: 'aws'})
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showToast('success', 'Analysis Complete', `Analyzed ${data.results.length} files`);
+                    await refreshAll();
+                } else {
+                    showToast('error', 'Error', data.message);
+                }
+            } catch (error) {
+                showToast('error', 'Error', error.message);
+            }
+        }
+
+        // Refresh all data
+        async function refreshAll() {
+            await Promise.all([
+                loadClouds(),
+                loadStats(),
+                loadCostAnalysis()
+            ]);
+        }
+
+        // Load clouds and files
+        async function loadClouds() {
+            try {
+                const response = await fetch('/api/clouds');
+                const clouds = await response.json();
+                
+                const grid = document.getElementById('cloudsGrid');
+                grid.innerHTML = '';
+                
+                const cloudOrder = ['aws', 'gcp', 'azure'];
+                const cloudColors = {
+                    aws: '--aws-color',
+                    gcp: '--gcp-color',
+                    azure: '--azure-color'
+                };
+                
+                for (const cloudId of cloudOrder) {
+                    const cloud = clouds[cloudId];
+                    if (!cloud) continue;
+                    
+                    const container = document.createElement('div');
+                    container.className = `cloud-container cloud-${cloudId}`;
+                    container.dataset.cloud = cloudId;
+                    
+                    // Allow dropping files
+                    container.addEventListener('dragover', handleDragOver);
+                    container.addEventListener('dragleave', handleDragLeave);
+                    container.addEventListener('drop', handleDrop);
+                    
+                    container.innerHTML = `
+                        <div class="cloud-header">
+                            <div class="cloud-icon">${cloudId === 'aws' ? '☁️' : cloudId === 'gcp' ? '🌐' : '⚡'}</div>
+                            <div class="cloud-info">
+                                <h3>${cloud.name}</h3>
+                                <p>${cloud.region} • ${cloud.files.length} files</p>
+                            </div>
+                        </div>
+                        <div class="files-list" id="files-${cloudId}">
+                            ${cloud.files.length === 0 ? 
+                                '<div class="empty-state"><div class="empty-icon">📂</div><p>No files yet</p></div>' :
+                                cloud.files.map(file => createFileHTML(file, cloudId)).join('')
+                            }
+                        </div>
+                    `;
+                    
+                    grid.appendChild(container);
+                }
+            } catch (error) {
+                console.error('Error loading clouds:', error);
+            }
+        }
+
+        // Create file HTML
+        function createFileHTML(file, cloud) {
+            const tierClass = getTierClass(file.tier);
+            const tierName = getTierName(file.tier);
+            const sizeFormatted = formatSize(file.size);
+            
+            return `
+                <div class="file-item" 
+                     draggable="true" 
+                     data-filename="${file.name}"
+                     data-cloud="${cloud}"
+                     ondragstart="handleDragStart(event)">
+                    <div class="file-header">
+                        <span class="file-name">📄 ${file.name}</span>
+                        <span class="file-tier ${tierClass}">${tierName}</span>
+                    </div>
+                    <div class="file-meta">
+                        <span>💾 ${sizeFormatted}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Get tier class
+        function getTierClass(tier) {
+            if (tier === 'STANDARD') return 'tier-hot';
+            if (tier === 'STANDARD_IA') return 'tier-warm';
+            if (tier === 'GLACIER') return 'tier-cold';
+            if (tier === 'DEEP_ARCHIVE') return 'tier-archive';
+            return 'tier-hot';
+        }
+
+        // Get tier name
+        function getTierName(tier) {
+            if (tier === 'STANDARD') return 'HOT';
+            if (tier === 'STANDARD_IA') return 'WARM';
+            if (tier === 'GLACIER') return 'COLD';
+            if (tier === 'DEEP_ARCHIVE') return 'ARCHIVE';
+            return 'HOT';
+        }
+
+        // Format file size
+        function formatSize(bytes) {
+            const mb = bytes / (1024 * 1024);
+            if (mb < 1024) return `${mb.toFixed(2)} MB`;
+            return `${(mb / 1024).toFixed(2)} GB`;
+        }
+
+        // Drag and drop handlers
+        function handleDragStart(event) {
+            draggedFile = event.target.dataset.filename;
+            sourceCloud = event.target.dataset.cloud;
+            event.target.classList.add('dragging');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            const container = event.currentTarget;
+            if (container.dataset.cloud !== sourceCloud) {
+                container.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        async function handleDrop(event) {
+            event.preventDefault();
+            const destCloud = event.currentTarget.dataset.cloud;
+            event.currentTarget.classList.remove('drag-over');
+            
+            // Remove dragging class
+            document.querySelectorAll('.dragging').forEach(el => {
+                el.classList.remove('dragging');
+            });
+            
+            if (destCloud !== sourceCloud && draggedFile) {
+                await migrateFile(draggedFile, sourceCloud, destCloud);
+            }
+            
+            draggedFile = null;
+            sourceCloud = null;
+        }
+
+        // Migrate file
+        async function migrateFile(filename, source, destination) {
+            showModal();
+            animateMigrationProgress();
+            
+            showToast('info', 'Migration Started', `Moving ${filename} from ${source.toUpperCase()} to ${destination.toUpperCase()}`);
+            
+            try {
+                const response = await fetch('/api/migrate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        filename: filename,
+                        source: source,
+                        destination: destination
+                    })
+                });
+                
+                const data = await response.json();
+                
+                closeModal();
+                
+                if (data.status === 'success') {
+                    showToast('success', 'Migration Complete', `✓ ${filename} migrated successfully with integrity verification`);
+                    await refreshAll();
+                } else {
+                    showToast('error', 'Migration Failed', data.message);
+                }
+            } catch (error) {
+                closeModal();
+                showToast('error', 'Error', error.message);
+            }
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                document.getElementById('totalFiles').textContent = stats.total_files;
+                document.getElementById('totalSize').textContent = `${stats.total_size_gb} GB`;
+                document.getElementById('cloudsActive').textContent = stats.clouds_active;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load cost analysis
+        async function loadCostAnalysis() {
+            try {
+                const response = await fetch('/api/cost-analysis');
+                const data = await response.json();
+                
+                document.getElementById('totalCost').textContent = `$${data.total_cost.toFixed(2)}`;
+                
+                const breakdown = document.getElementById('costBreakdown');
+                breakdown.innerHTML = '';
+                
+                const cloudIcons = {
+                    aws: {icon: '☁️', color: 'var(--aws-color)'},
+                    gcp: {icon: '🌐', color: 'var(--gcp-color)'},
+                    azure: {icon: '⚡', color: 'var(--azure-color)'}
+                };
+                
+                for (const [cloud, info] of Object.entries(data.clouds)) {
+                    const card = document.createElement('div');
+                    card.className = 'cost-card';
+                    card.innerHTML = `
+                        <div class="cost-card-header">
+                            <div class="cost-card-icon" style="background: ${cloudIcons[cloud].color};">
+                                ${cloudIcons[cloud].icon}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600;">${cloud.toUpperCase()}</div>
+                                <div class="cost-label">${info.file_count} files • ${info.total_size_gb} GB</div>
+                            </div>
+                        </div>
+                        <div class="cost-amount">$${info.cost.toFixed(2)}</div>
+                        <div class="cost-label">per month</div>
+                    `;
+                    breakdown.appendChild(card);
+                }
+            } catch (error) {
+                console.error('Error loading cost analysis:', error);
+            }
+        }
+
+        // Show toast notification
+        function showToast(type, title, message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const icons = {
+                success: '✓',
+                error: '✗',
+                info: 'ℹ'
+            };
+            
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type]}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Modal functions
+        function showModal() {
+            document.getElementById('migrationModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('migrationModal').classList.remove('active');
+        }
+
+        function animateMigrationProgress() {
+            const progress = document.getElementById('migrationProgress');
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 10;
+                progress.style.width = `${width}%`;
+                if (width >= 90) clearInterval(interval);
+            }, 200);
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            loadStats();
+            loadCostAnalysis();
+        }, 5000);
+
+        // Initial load
+        window.addEventListener('load', () => {
+            showToast('info', 'Welcome to Astra', 'Initialize the system to get started');
+        });
+    </script>
+</body>
+</html>
